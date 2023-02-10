@@ -1,19 +1,64 @@
+<script setup>
+import gambar from "../../assets/illustration/Login.png";
+import { supabase } from "../../supabase";
+import { router } from "../../router";
+import Swal from "sweetalert2";
+import Loading from "../../components/loading.vue";
+import { useRoute } from "vue-router";
+import { ref, reactive } from "vue";
+const route = useRoute();
+const id = route.params.id;
+const users = ref([]);
+const login = reactive({
+  email: "",
+  password: "",
+});
+
+const isLoading = ref(false);
+
+const clearForm = () => {
+  login.email = "";
+  login.password = "";
+};
+const submit = async () => {
+  try {
+    isLoading.value = true;
+    const { data, error } = await supabase
+      .from("user")
+      .select("*")
+      .eq("email", login.email);
+    users.value = data;
+    console.log(users.value[0].role);
+    if (users.value[0].role === "admin") {
+      router.push("/dashboard");
+    } else if (users.value[0].role === "user") {
+      router.push("/customer/" + users.value[0].id);
+    } else {
+      Swal.fire("Pemberitahuan", "Data Tidak Ditemukan", "warning");
+    }
+    isLoading.value = false;
+    clearForm();
+    if (error) throw error;
+  } catch (error) {
+    console.log(error);
+    Swal.fire("Error :(", `${error.message}`, "error");
+    isLoading.value = false;
+  }
+};
+</script>
+
 <template>
-  <section class="h-screen">
-    <div class="px-6 h-full text-gray-800">
+  <section class="h-screen bg-blue-300">
+    <div class="h-full text-gray-800">
       <div
         class="flex xl:justify-center lg:justify-between justify-center items-center flex-wrap h-full g-6"
       >
         <div
-          class="grow-0 shrink-1 md:shrink-0 basis-auto xl:w-6/12 lg:w-6/12 md:w-9/12 mb-12 md:mb-0"
+          class="grow-0 bg-blue-300 shrink-1 md:shrink-0 basis-auto xl:w-6/12 lg:w-6/12 md:w-9/12 mb-12 md:mb-0"
         >
-          <img
-            src="https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-login-form/draw2.webp"
-            class="w-full"
-            alt="Sample image"
-          />
+          <img height="380" :src="gambar" alt="" />
         </div>
-        <div class="xl:ml-20 xl:w-5/12 lg:w-5/12 md:w-8/12 mb-12 md:mb-0">
+        <div class="xl:ml-20 xl:w-5/12 lg:w-5/12 md:w-8/12 mb-12 md:mb-0 pr-24">
           <form>
             <div
               class="flex flex-row items-center justify-center lg:justify-start"
@@ -89,6 +134,7 @@
             <!-- Email input -->
             <div class="mb-6">
               <input
+                v-model="login.email"
                 type="text"
                 class="form-control block w-full px-4 py-2 text-xl font-normal text-gray-700 bg-white bg-clip-padding border border-solid border-gray-300 rounded transition ease-in-out m-0 focus:text-gray-700 focus:bg-white focus:border-blue-600 focus:outline-none"
                 id="exampleFormControlInput2"
@@ -99,6 +145,7 @@
             <!-- Password input -->
             <div class="mb-6">
               <input
+                v-model="login.password"
                 type="password"
                 class="form-control block w-full px-4 py-2 text-xl font-normal text-gray-700 bg-white bg-clip-padding border border-solid border-gray-300 rounded transition ease-in-out m-0 focus:text-gray-700 focus:bg-white focus:border-blue-600 focus:outline-none"
                 id="exampleFormControlInput2"
@@ -119,23 +166,27 @@
                   >Remember me</label
                 >
               </div>
-              <a href="#!" class="text-gray-800">Forgot password?</a>
+              <a href="#!" class="text-gray-800">Lupa Password ?</a>
             </div>
 
             <div class="text-center lg:text-left">
               <button
+                @click="submit()"
                 type="button"
                 class="inline-block px-7 py-3 bg-blue-600 text-white font-medium text-sm leading-snug uppercase rounded shadow-md hover:bg-blue-700 hover:shadow-lg focus:bg-blue-700 focus:shadow-lg focus:outline-none focus:ring-0 active:bg-blue-800 active:shadow-lg transition duration-150 ease-in-out"
               >
                 Login
               </button>
+
               <p class="text-sm font-semibold mt-2 pt-1 mb-0">
-                Don't have an account?
-                <a
-                  href="#!"
-                  class="text-red-600 hover:text-red-700 focus:text-red-700 transition duration-200 ease-in-out"
-                  >Register</a
-                >
+                Belum punya akun ?
+                <router-link to="/register">
+                  <a
+                    href="#!"
+                    class="text-red-600 hover:text-red-700 focus:text-red-700 transition duration-200 ease-in-out"
+                    >Register</a
+                  >
+                </router-link>
               </p>
             </div>
           </form>
@@ -143,4 +194,5 @@
       </div>
     </div>
   </section>
+  <Loading v-if="isLoading" />
 </template>
